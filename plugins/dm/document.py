@@ -70,6 +70,7 @@ cnvrt_api_2PDF = [
     ".mpp",
     ".xml",
     ".doc",
+    ".html",
     ".mpt",
     ".odt",
     ".pot",
