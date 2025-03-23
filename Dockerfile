@@ -1,21 +1,17 @@
 FROM python:3.11
-RUN mkdir /pdf && chmod 777 /pdf
 
+RUN mkdir /pdf && chmod -R 755 /pdf
 WORKDIR /pdf
 
-COPY requirements.txt requirements.txt
-RUN pip install --upgrade pip && pip install -r requirements.txt
+RUN apt update && apt install -y ocrmypdf wkhtmltopdf tree
 
-COPY libgenesis/requirements.txt requirements.txt
-RUN pip install -r requirements.txt
+COPY requirements.txt /tmp/requirements.txt
+RUN pip install --upgrade pip && pip install --no-cache-dir -r /tmp/requirements.txt
 
-RUN apt update
-RUN apt install -y ocrmypdf
-RUN apt install -y wkhtmltopdf
+COPY libgenesis/requirements.txt /tmp/libgenesis-requirements.txt
+RUN pip install --no-cache-dir -r /tmp/libgenesis-requirements.txt
 
 COPY . .
 
-RUN apt-get install -y tree
-RUN tree
-
-CMD python3 __main__.py
+# تحديد استخدام المعالج والذاكرة
+CMD ["python3", "-u", "__main__.py"]
