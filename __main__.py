@@ -4,7 +4,6 @@
 
 file_name = "__main__.py"
 
-
 iLovePDF = '''
   _   _                  ___  ___  ____ ™
  | | | |   _____ _____  | _ \|   \|  __| 
@@ -14,7 +13,6 @@ iLovePDF = '''
                          ❤ Email: nabilanavab@gmail.com
                          ❤ Telegram: @nabilanavab
 '''
-
 
 import asyncio, os
 import shutil, sys
@@ -30,13 +28,20 @@ from configs.config import bot, settings, images
 from pyrogram import Client as ILovePDF, errors
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup, BotCommand
 
-
 if dataBASE.MONGODB_URI:
     from database import db
 
 if not bot.API_TOKEN or not bot.API_HASH or not bot.API_ID:
     logger.debug(f"bot.API_TOKEN, bot.API_HASH, bot.API_ID : MANDATORY")
     sys.exit()
+
+# تعريف دالة getLang للتحقق من لغة المستخدم
+async def getLang(user_id: int) -> str:
+    """
+    تسترجع لغة المستخدم المحددة في __users__.userLang، 
+    وإلا تُعيد اللغة الافتراضية من الإعدادات.
+    """
+    return __users__.userLang.get(user_id, settings.DEFAULT_LANG)
 
 # PYROGRAM
 class Bot(ILovePDF):
@@ -63,7 +68,7 @@ class Bot(ILovePDF):
             async for user in users:
                 if settings.MULTI_LANG_SUP:
                     lang = user.get("lang", False)
-                    if (lang != False) and (lang != settings.DEFAULT_LANG):
+                    if lang and lang != settings.DEFAULT_LANG:
                         __users__.userLang[user.get("id")] = f"{lang}"
                 if user.get("thumb", False):
                     CUSTOM_THUMBNAIL_U.append(user["id"])
@@ -73,7 +78,7 @@ class Bot(ILovePDF):
                 GROUPS.append(group["id"])
                 if settings.MULTI_LANG_SUP:
                     lang = group.get("lang", False)
-                    if (lang != False) and (lang != settings.DEFAULT_LANG):
+                    if lang and lang != settings.DEFAULT_LANG:
                         __users__.userLang[group.get("id")] = f"{lang}"
                 if group.get("thumb", False):
                     CUSTOM_THUMBNAIL_C.append(group["id"])
@@ -81,11 +86,7 @@ class Bot(ILovePDF):
             # -- Loads Other Necessary Data --
             users = await db.get_all_users()
             async for user in users:
-                if (
-                    user.get("api", False)
-                    or user.get("fname", False)
-                    or user.get("capt", False)
-                ):
+                if user.get("api", False) or user.get("fname", False) or user.get("capt", False):
                     DATA[user.get("id")] = [0, 0, 0]
                     if user.get("api", False):
                         DATA[user.get("id")][0] = 1
@@ -98,11 +99,11 @@ class Bot(ILovePDF):
         try:
             await super().start()
         except errors.FloodWait as e:
-            logger.debug(f"wait {e.value} seconds.. automtically restarts..")
-            for time in range(e.value, 0, -10):
+            logger.debug(f"wait {e.value} seconds.. automatically restarting..")
+            for remaining in range(e.value, 0, -10):
                 await asyncio.sleep(10)
-                if time % 10 == 0:
-                    logger.debug(f"Remaining seconds: {time}")
+                if remaining % 10 == 0:
+                    logger.debug(f"Remaining seconds: {remaining}")
             await super().start()
 
         myID.append(await app.get_me())
@@ -119,16 +120,14 @@ class Bot(ILovePDF):
                 inviteLink = await app.get_chat(int(settings.UPDATE_CHANNEL))
                 chanlCount = inviteLink.members_count
                 if not inviteLink and inviteLink.username:
-                    inviteLink = await app.create_chat_invite_link(
-                        int(settings.UPDATE_CHANNEL)
-                    )
+                    inviteLink = await app.create_chat_invite_link(int(settings.UPDATE_CHANNEL))
                     invite_link.append(inviteLink.invite_link)
                 else:
                     inviteLink = f"https://telegram.dog/{inviteLink.username}"
                     invite_link.append(inviteLink)
             except errors.ChannelInvalid:
                 settings.UPDATE_CHANNEL = False
-                logger.debug(f"BoT NoT AdMiN iN UPDATE_CHANNEL")
+                logger.debug("Bot is not admin in UPDATE_CHANNEL")
             except Exception as error:
                 logger.debug(f"⚠️ FORCE SUBSCRIPTION ERROR : {error}", exc_info=True)
 
@@ -159,28 +158,23 @@ class Bot(ILovePDF):
             try:
                 if settings.UPDATE_CHANNEL:
                     caption = (
-                        f"{myID[0].first_name} get started successfully...✅\n\n"
+                        f"{myID[0].first_name} started successfully...✅\n\n"
                         f"FORCED CHANNEL:\n"
                         f"invite_link: {str(invite_link[0]) if invite_link[0] is not None else '❌'}\n"
                         f"get_member : {str(chanlCount) if invite_link[0] is not None else '❌'}\n"
                     )
                 else:
-                    caption = f"{myID[0].first_name} get started successfully...✅"
+                    caption = f"{myID[0].first_name} started successfully...✅"
                 if log.LOG_FILE and log.LOG_FILE[-4:] == ".log":
                     doc = f"./{log.LOG_FILE}"
                     markUp = InlineKeyboardMarkup(
-                        [[
-                            InlineKeyboardButton("♻️ refresh log ♻️", callback_data="log")
-                        ],[
-                            InlineKeyboardButton("◍ Close ◍", callback_data="close|admin")
-                        ],]
+                        [[InlineKeyboardButton("♻️ refresh log ♻️", callback_data="log")],
+                         [InlineKeyboardButton("◍ Close ◍", callback_data="close|admin")]]
                     )
                 else:
                     doc = images.THUMBNAIL_URL
                     markUp = InlineKeyboardMarkup(
-                        [[
-                            InlineKeyboardButton("◍ close ◍", callback_data="close|admin")
-                        ]]
+                        [[InlineKeyboardButton("◍ close ◍", callback_data="close|admin")]]
                     )
                 await app.send_document(
                     chat_id=int(log.LOG_CHANNEL),
@@ -190,28 +184,26 @@ class Bot(ILovePDF):
                 )
             except errors.ChannelInvalid:
                 log.LOG_CHANNEL = False
-                logger.debug(f"BoT NoT AdMiN iN LoG ChAnNeL")
+                logger.debug("Bot is not admin in Log Channel")
             except Exception as error:
                 logger.debug(f"⚠️ ERROR IN LOG CHANNEL - {error}", exc_info=True)
 
     async def stop(self, *args):
         await super().stop()
 
-
 if __name__ == "__main__":
-    if os.path.exists(f"{os.path.abspath(os.getcwd())}/work/nabilanavab"):
-        for chat in os.listdir("work/nabilanavab"):
-            if f"{chat}".startswith("-100"):
-                works["g"].append(
-                    [chat, [user for user in os.listdir(f"work/nabilanavab/{chat}")]]
-                )
+    work_path = os.path.join(os.path.abspath(os.getcwd()), "work", "nabilanavab")
+    if os.path.exists(work_path):
+        for chat in os.listdir(work_path):
+            if chat.startswith("-100"):
+                works["g"].append([chat, [user for user in os.listdir(os.path.join(work_path, chat))]])
             else:
                 works["u"].append(chat)
-        shutil.rmtree(f"{os.path.abspath(os.getcwd())}/work")
-    os.makedirs("work/nabilanavab")
+        shutil.rmtree(os.path.join(os.path.abspath(os.getcwd()), "work"))
+    os.makedirs(work_path, exist_ok=True)
 
     app = Bot()
     app.run()
 
 # If you have any questions or suggestions, please feel free to reach out.
-# Together, we can make this project even better, Happy coding!  XD
+# Together, we can make this project even better, Happy coding! XD
