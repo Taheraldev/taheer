@@ -21,7 +21,7 @@ from configs.db import *
 from logger import logger
 from pyromod import listen
 from lang import __users__
-from plugins.utils import *
+from plugins.utils import *   # هنا يتم استيراد جميع الدوال من الوحدة utils، بما في ذلك util.translate
 from configs.log import log
 from configs.beta import BETA
 from configs.config import bot, settings, images
@@ -145,7 +145,8 @@ class Bot(ILovePDF):
         if settings.SEND_RESTART and len(works["u"]):
             for u in works["u"]:
                 lang_code = await getLang(int(u))
-                msg, btn = await translate(
+                # استخدام الدالة من وحدة util بدلاً من استدعائها بشكل مباشر
+                msg, btn = await util.translate(
                     text="RESTART['msg']", button="RESTART['btn']", lang_code=lang_code
                 )
                 await app.send_message(chat_id=int(u), text=msg, reply_markup=btn)
@@ -204,6 +205,3 @@ if __name__ == "__main__":
 
     app = Bot()
     app.run()
-
-# If you have any questions or suggestions, please feel free to reach out.
-# Together, we can make this project even better, Happy coding! XD
