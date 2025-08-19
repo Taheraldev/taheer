@@ -1,32 +1,20 @@
 FROM python:3.11
-
-# إنشاء مجلد
 RUN mkdir /pdf && chmod 777 /pdf
-WORKDIR /pdf
 
-# تثبيت بايثون requirements
-COPY requirements.txt requirements.txt
+WORKDIR /ILovePDF
+
+COPY ILovePDF/requirements.txt requirements.txt
 RUN pip install --upgrade pip && pip install -r requirements.txt
 
-COPY libgenesis/requirements.txt requirements.txt
+COPY ILovePDF/libgenesis/requirements.txt requirements.txt
 RUN pip install -r requirements.txt
 
-# تثبيت ocrmypdf + wkhtmltopdf من .deb
-RUN apt-get update && apt-get install -y \
-    ocrmypdf \
-    wget \
-    xfonts-75dpi \
-    xfonts-base \
-    tree \
-    && wget -O /tmp/wkhtmltopdf.deb https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox_0.12.6-1.buster_amd64.deb \
-    && apt-get install -y /tmp/wkhtmltopdf.deb \
-    && rm /tmp/wkhtmltopdf.deb \
-    && rm -rf /var/lib/apt/lists/*
+RUN apt update
+RUN apt install -y ocrmypdf
 
-# نسخ باقي الملفات
-COPY . .
+COPY /ILovePDF .
 
-# تأكد أن wkhtmltopdf مثبت
-RUN wkhtmltopdf --version
+RUN apt-get install -y tree
+RUN tree
 
-CMD ["python3", "-u", "__main__.py"]
+CMD bash run.sh
